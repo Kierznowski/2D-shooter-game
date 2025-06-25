@@ -1,8 +1,12 @@
 #include "player.h"
+#include "map.h"
+
 #include <math.h>
 
 #define PLAYER_ROTATION_SPEED 3.0f // rads per sec
 #define PLAYER_SPEED 200.0f // pixels per sec
+#define PLAYER_WIDTH 32
+#define PLAYER_HEIGHT 32
 
 void player_init(Player *player, int x, int y) {
     player->x = x;
@@ -21,22 +25,29 @@ void player_update(Player *player, const Uint8 *key_state, float delta_time) {
     // Forward/Backward
     float dx = cosf(player->angle);
     float dy = sinf(player->angle);
+    float next_x = player->x;
+    float next_y = player->y;
 
     if (key_state[SDL_SCANCODE_W]) {
-        player->x += dx * PLAYER_SPEED * delta_time;
-        player->y += dy * PLAYER_SPEED * delta_time;
+        next_x += dx * PLAYER_SPEED * delta_time;
+        next_y += dy * PLAYER_SPEED * delta_time;
     }
 
     if (key_state[SDL_SCANCODE_S]) {
-        player->x -= dx * PLAYER_SPEED * delta_time;
-        player->y -= dy * PLAYER_SPEED * delta_time;
+        next_x -= dx * PLAYER_SPEED * delta_time;
+        next_y -= dy * PLAYER_SPEED * delta_time;
+    }
+
+    if (!map_check_player_collision(next_x, next_y, PLAYER_WIDTH, PLAYER_HEIGHT)) {
+        player->x = next_x;
+        player->y = next_y;
     }
 }
 
 void player_render(SDL_Renderer *renderer, Player *player) {
     // player body
-    const int w = 40;
-    const int h = 40;
+    const int w = PLAYER_WIDTH;
+    const int h = PLAYER_HEIGHT;
 
     // player center
     float x_cen = w / 2.0f;

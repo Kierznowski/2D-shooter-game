@@ -1,6 +1,8 @@
 #include "bullet.h"
 #include <math.h>
 
+#include "map.h"
+
 #define BULLET_SPEED 400.f;
 #define BULLET_RADIUS 3.0f
 
@@ -33,6 +35,10 @@ void bullet_update_all(Bullet bullets[], const Uint8 *key_state, float delta_tim
         if (bullets[i].active) {
             bullets[i].x += bullets[i].vx * delta_time;
             bullets[i].y += bullets[i].vy * delta_time;
+
+            if (map_check_bullet_collision(bullets[i].x, bullets[i].y, BULLET_RADIUS, BULLET_RADIUS)) {
+                bullets[i].active = false;
+            }
 
             if (bullets[i].x < 0 || bullets[i].x > 800 ||
                 bullets[i].y < 0 || bullets[i].y > 600) {
