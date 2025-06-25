@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include "player.h"
 #include "bullet.h"
+#include "map.h"
 
 #define SCREEN_WIDTH 800
 #define SCREEN_HEIGHT 600
@@ -31,8 +32,8 @@ int main(int argc, char *argv[]) {
 
     Player player;
     player_init(&player, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
-
     Bullet bullets[MAX_BULLETS] = {0};
+    map_init();
 
     bool running = true;
     Uint32 last_time = SDL_GetTicks();
@@ -61,6 +62,7 @@ int main(int argc, char *argv[]) {
         // rendering objects
         player_render(renderer, &player);
         bullet_render_all(renderer, bullets);
+        map_render(renderer);
 
         SDL_RenderPresent(renderer);
     }
