@@ -5,7 +5,9 @@
 #include "map.h"
 
 #define SCREEN_WIDTH 800
-#define SCREEN_HEIGHT 600
+#define SCREEN_HEIGHT 640
+
+bool running = true;
 
 int main(int argc, char *argv[]) {
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -35,31 +37,29 @@ int main(int argc, char *argv[]) {
     Bullet bullets[MAX_BULLETS] = {0};
     map_init();
 
-    bool running = true;
     Uint32 last_time = SDL_GetTicks();
 
     while (running) {
+        // Input
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
                 running = false;
             }
         }
+        Uint8 *key_state = SDL_GetKeyboardState(NULL);
 
+        // Update
         Uint32 current_time = SDL_GetTicks();
-        float delta_time = (current_time - last_time) / 1000.0f;
+        const float delta_time = (current_time - last_time) / 1000.0f;
         last_time = current_time;
-
-        const Uint8 *key_state = SDL_GetKeyboardState(NULL);
         player_update(&player, key_state, delta_time);
-
         bullet_update_all(bullets, key_state, delta_time, player.x, player.y, player.angle);
 
-        // clear screen
+        // Render
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-        SDL_RenderClear(renderer);
+        SDL_RenderClear(renderer); // clear screen
 
-        // rendering objects
         player_render(renderer, &player);
         bullet_render_all(renderer, bullets);
         map_render(renderer);
