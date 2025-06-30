@@ -38,10 +38,16 @@ void player_update(Player *player, const Uint8 *key_state, float delta_time) {
         next_y -= dy * PLAYER_SPEED * delta_time;
     }
 
-    if (!map_check_player_collision(next_x, next_y, PLAYER_WIDTH, PLAYER_HEIGHT)) {
-        player->x = next_x;
-        player->y = next_y;
+    if (map_check_player_collision(next_x, player->y, PLAYER_WIDTH, PLAYER_HEIGHT)) {
+        next_x = player->x;
     }
+
+    if (map_check_player_collision(player->x, next_y, PLAYER_WIDTH, PLAYER_HEIGHT)) {
+        next_y = player->y;
+    }
+
+    player->x = next_x;
+    player->y = next_y;
 }
 
 void player_render(SDL_Renderer *renderer, Player *player) {
