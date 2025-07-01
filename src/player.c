@@ -1,17 +1,19 @@
 #include "player.h"
-#include "map.h"
+#include "tilemap.h"
 
 #include <math.h>
 
-#define PLAYER_ROTATION_SPEED 3.0f // rads per sec
-#define PLAYER_SPEED 200.0f // pixels per sec
-#define PLAYER_WIDTH 32
-#define PLAYER_HEIGHT 32
+#define PLAYER_ROTATION_SPEED 4.0f // rads per sec
+#define PLAYER_SPEED 300.0f // pixels per sec
+#define PLAYER_WIDTH 30
+#define PLAYER_HEIGHT 30
 
 void player_init(Player *player, int x, int y) {
     player->x = x;
     player->y = y;
     player->angle = 0.0f;
+    player->ammo = 25;
+    player->health = 100;
 }
 
 void player_update(Player *player, const Uint8 *key_state, float delta_time) {
@@ -38,11 +40,20 @@ void player_update(Player *player, const Uint8 *key_state, float delta_time) {
         next_y -= dy * PLAYER_SPEED * delta_time;
     }
 
-    if (map_check_player_collision(next_x, player->y, PLAYER_WIDTH, PLAYER_HEIGHT)) {
+    int player_half_width = PLAYER_WIDTH / 2;
+    int player_half_height = PLAYER_HEIGHT / 2;
+
+    if (tilemap_is_colliding(next_x + player_half_width, player->y + player_half_height) ||
+        tilemap_is_colliding(next_x + player_half_width, player->y - player_half_height) ||
+        tilemap_is_colliding(next_x - player_half_width, player->y + player_half_height) ||
+        tilemap_is_colliding(next_x - player_half_width, player->y - player_half_height)) {
         next_x = player->x;
     }
 
-    if (map_check_player_collision(player->x, next_y, PLAYER_WIDTH, PLAYER_HEIGHT)) {
+    if (tilemap_is_colliding(player->x + player_half_width, next_y + player_half_height) ||
+        tilemap_is_colliding(player->x + player_half_height, next_y - player_half_height) ||
+        tilemap_is_colliding(player->x - player_half_width, next_y + player_half_height) ||
+        tilemap_is_colliding(player->x - player_half_width, next_y - player_half_height)) {
         next_y = player->y;
     }
 
@@ -50,7 +61,10 @@ void player_update(Player *player, const Uint8 *key_state, float delta_time) {
     player->y = next_y;
 }
 
-void player_render(SDL_Renderer *renderer, Player *player) {
+void player_render(SDL_Renderer *renderer, Player *player, float camera_x, float camera_y) {
+    float screen_x = player->x - camera_x;
+    float screen_y = player->y - camera_y;
+
     // player body
     const int w = PLAYER_WIDTH;
     const int h = PLAYER_HEIGHT;
@@ -75,13 +89,17 @@ void player_render(SDL_Renderer *renderer, Player *player) {
         points[i].y = rect[i].x * sinf(player->angle) + rect[i].y * cosf(player->angle) + player->y;
     }
 
-    SDL_Rect player_body = {(int)(player->x - x_cen), (int)(player->y - x_cen), w, h};
-    SDL_SetRenderDrawColor(renderer, 0, 128, 255, 255);
+    SDL_Rect player_body = {
+        (int)(screen_x - x_cen),
+        (int)(screen_y - y_cen),
+        w, h
+    };
+    SDL_SetRenderDrawColor(renderer, 0, 128, 128, 255);
     SDL_RenderFillRect(renderer, &player_body);
 
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     SDL_RenderDrawLine(renderer,
-        (int)player->x, (int)player->y,
-        (int)(player->x + cosf(player->angle) * x_cen),
-        (int)(player->y + sinf(player->angle) * x_cen));
+        (int)screen_x, (int)screen_y,
+        (int)(screen_x + cosf(player->angle) * x_cen),
+        (int)(screen_y + sinf(player->angle) * x_cen));
 }
