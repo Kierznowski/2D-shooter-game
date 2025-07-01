@@ -13,8 +13,10 @@ add_executable(2D_shooter_game main.c
         player.h
         bullet.c
         bullet.h
-        map.c
-        map.h)
+        tilemap.c
+        tilemap.h
+        hud.c
+        hud.h)
 
 # Link SDL2 + math libraries
 target_link_libraries(2D_shooter_game ${SDL2_LIBRARIES} m)

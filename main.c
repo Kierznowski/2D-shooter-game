@@ -2,12 +2,16 @@
 #include <stdbool.h>
 #include "player.h"
 #include "bullet.h"
-#include "map.h"
+#include "tilemap.h"
+#include "hud.h"
 
 #define SCREEN_WIDTH 800
 #define SCREEN_HEIGHT 640
 
 bool running = true;
+
+float camera_x = 0;
+float camera_y = 0;
 
 int main(int argc, char *argv[]) {
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -33,9 +37,9 @@ int main(int argc, char *argv[]) {
     }
 
     Player player;
-    player_init(&player, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
+    player_init(&player, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 100);
     Bullet bullets[MAX_BULLETS] = {0};
-    map_init();
+    tilemap_load(renderer);
 
     Uint32 last_time = SDL_GetTicks();
 
@@ -54,19 +58,23 @@ int main(int argc, char *argv[]) {
         const float delta_time = (current_time - last_time) / 1000.0f;
         last_time = current_time;
         player_update(&player, key_state, delta_time);
-        bullet_update_all(bullets, key_state, delta_time, player.x, player.y, player.angle);
+        bullet_update_all(bullets, key_state, delta_time, player.x, player.y, player.angle, &player.ammo);
+        camera_x = player.x - SCREEN_WIDTH / 2;
+        camera_y = player.y - SCREEN_HEIGHT / 2;
 
         // Render
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer); // clear screen
 
-        player_render(renderer, &player);
-        bullet_render_all(renderer, bullets);
-        map_render(renderer);
+        tilemap_render(renderer, camera_x, camera_y);
+        player_render(renderer, &player, camera_x, camera_y);
+        bullet_render_all(renderer, bullets, camera_x, camera_y);
+        hud_render(renderer, &player);
 
         SDL_RenderPresent(renderer);
     }
 
+    tilemap_unload();
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();

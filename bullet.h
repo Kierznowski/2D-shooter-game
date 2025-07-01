@@ -13,7 +13,7 @@ typedef struct {
 } Bullet;
 
 void bullet_fire(Bullet bullets[], float x, float y, float angle);
-void bullet_update_all(Bullet bullets[], const Uint8 *key_state, float delta_time, float x, float y, float angle);
-void bullet_render_all(SDL_Renderer *renderer, Bullet bullets[]);
+void bullet_update_all(Bullet bullets[], const Uint8 *key_state, float delta_time, float x, float y, float angle, int *player_ammo);
+void bullet_render_all(SDL_Renderer *renderer, Bullet bullets[], float camera_x, float camera_y);
 
 #endif //BULLET_H
