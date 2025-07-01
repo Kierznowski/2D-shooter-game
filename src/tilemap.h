@@ -5,8 +5,6 @@
 #include <SDL2/SDL.h>
 
 #define TILE_SIZE 32
-#define MAP_WIDTH (800 / TILE_SIZE)
-#define MAP_HEIGHT (640 / TILE_SIZE)
 
 void tilemap_load(SDL_Renderer *renderer);
 void tilemap_render(SDL_Renderer *renderer, float camera_x, float camera_y);

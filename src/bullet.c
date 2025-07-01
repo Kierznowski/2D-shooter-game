@@ -44,11 +44,6 @@ void bullet_update_all(Bullet bullets[], const Uint8 *key_state, float delta_tim
             if (tilemap_is_colliding(bullets[i].x, bullets[i].y)) {
                 bullets[i].active = false;
             }
-
-            if (bullets[i].x < 0 || bullets[i].x > 800 ||
-                bullets[i].y < 0 || bullets[i].y > 600) {
-                bullets[i].active = false;
-            }
         }
     }
 }

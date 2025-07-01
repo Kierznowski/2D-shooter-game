@@ -1,7 +1,9 @@
 #include "tilemap.h"
 #include <stdio.h>
 
-static int map[MAP_HEIGHT][MAP_WIDTH];
+static int **map = NULL;
+static int map_width = 0;
+static int map_height = 0;
 static SDL_Texture *wall_texture = NULL;
 static SDL_Texture *floor_texture = NULL;
 
@@ -19,9 +21,50 @@ static SDL_Texture *load_texture(SDL_Renderer *renderer, const char *path) {
     return texture;
 };
 
+void get_map_size(const char *filename, int *width, int *height) {
+    FILE *f = fopen(filename, "r");
+    if (!f) {
+        printf("Unable to load map from file %s! SDL Error: %s\n", filename, SDL_GetError());
+        *width = *height = 0;
+        return;
+    }
+
+    int w = 0, h = 0;
+    int current_line_length = 0;
+    int c;
+
+    while ((c = fgetc(f)) != EOF) {
+        if (c == '\n') {
+            if (current_line_length > w) {
+                w = current_line_length;
+            }
+            current_line_length = 0;
+            h++;
+        } else {
+            current_line_length++;
+        }
+    }
+
+    if (current_line_length > 0) {
+        if (current_line_length > w) {
+            w = current_line_length;
+        }
+        h++;
+    }
+    fclose(f);
+    *width = w;
+    *height = h;
+}
+
 void tilemap_load(SDL_Renderer *renderer) {
     wall_texture = load_texture(renderer, "./assets/textures/wall.bmp");
     floor_texture = load_texture(renderer, "./assets/textures/floor.bmp");
+
+    get_map_size("./assets/map/map.txt", &map_width, &map_height);
+    map = malloc(sizeof(int*) * map_height);
+    for (int y = 0; y < map_height; y++) {
+        map[y] = malloc(sizeof(int) * map_width);
+    }
 
     FILE *f = fopen("./assets/map/map.txt", "r");
     if (!f) {
@@ -29,10 +72,12 @@ void tilemap_load(SDL_Renderer *renderer) {
         return;
     }
 
-    for (int y = 0; y < MAP_HEIGHT; y++) {
-        for (int x = 0; x < MAP_WIDTH; x++) {
+    for (int y = 0; y < map_height; y++) {
+        for (int x = 0; x < map_width; x++) {
             char c = fgetc(f);
-            if (c == '\n') c = fgetc(f);
+            if (c == '\n') {
+                c = fgetc(f);
+            }
             if (c == '#') {
                 map[y][x] = 1;
             } else {
@@ -43,13 +88,15 @@ void tilemap_load(SDL_Renderer *renderer) {
     fclose(f);
 }
 
+
+
 void tilemap_render(SDL_Renderer *renderer, float camera_x, float camera_y) {
     SDL_Rect dest;
     dest.w = TILE_SIZE;
     dest.h = TILE_SIZE;
 
-    for (int y = 0; y < MAP_HEIGHT; y++) {
-        for (int x = 0; x < MAP_WIDTH; x++) {
+    for (int y = 0; y < map_height; y++) {
+        for (int x = 0; x < map_width; x++) {
             dest.x = x * TILE_SIZE - camera_x;
             dest.y = y * TILE_SIZE - camera_y;
 
@@ -65,7 +112,7 @@ void tilemap_render(SDL_Renderer *renderer, float camera_x, float camera_y) {
 int tilemap_get_tile(int world_x, int world_y) {
     const int tx = world_x / TILE_SIZE;
     const int ty = world_y / TILE_SIZE;
-    if (tx >= 0 && ty >= 0 && tx < MAP_WIDTH && ty < MAP_HEIGHT) {
+    if (tx >= 0 && ty >= 0 && tx < map_width && ty < map_height) {
         return map[ty][tx];
     }
     return 0;
@@ -82,4 +129,9 @@ void tilemap_unload() {
     if (floor_texture) {
         SDL_DestroyTexture(floor_texture);
     }
+    for (int y = 0; y < map_height; y++) {
+        free(map[y]);
+    }
+    free(map);
+    map = NULL;
 }
