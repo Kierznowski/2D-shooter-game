@@ -8,6 +8,8 @@
 #define PLAYER_WIDTH 30
 #define PLAYER_HEIGHT 30
 
+bool host = false;
+
 void player_init(Player *player, int x, int y) {
     player->x = x;
     player->y = y;
@@ -61,7 +63,7 @@ void player_update(Player *player, const Uint8 *key_state, float delta_time) {
     player->y = next_y;
 }
 
-void player_render(SDL_Renderer *renderer, Player *player, float camera_x, float camera_y) {
+void player_render(SDL_Renderer *renderer, Player *player, float camera_x, float camera_y, bool opponent) {
     float screen_x = player->x - camera_x;
     float screen_y = player->y - camera_y;
 
@@ -82,8 +84,8 @@ void player_render(SDL_Renderer *renderer, Player *player, float camera_x, float
     };
 
     // Player corners after rotation
-    SDL_FPoint points[4];
     // Rotate player
+        SDL_FPoint points[4];
     for (int i = 0; i < 4; i++) {
         points[i].x = rect[i].x * cosf(player->angle) - rect[i].y * sinf(player->angle) + player->x;
         points[i].y = rect[i].x * sinf(player->angle) + rect[i].y * cosf(player->angle) + player->y;
@@ -94,7 +96,11 @@ void player_render(SDL_Renderer *renderer, Player *player, float camera_x, float
         (int)(screen_y - y_cen),
         w, h
     };
-    SDL_SetRenderDrawColor(renderer, 0, 128, 128, 255);
+    if (opponent) {
+        SDL_SetRenderDrawColor(renderer, 0, 128, 128, 255);
+    } else {
+        SDL_SetRenderDrawColor(renderer, 128, 64, 0, 255);
+    }
     SDL_RenderFillRect(renderer, &player_body);
 
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
