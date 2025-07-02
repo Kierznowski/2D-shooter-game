@@ -86,6 +86,7 @@ int main(int argc, char *argv[]) {
 
     tilemap_unload();
     light_beam_destroy();
+    player_destroy_texture();
     network_shutdown();
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
@@ -121,6 +122,7 @@ void set_SDL() {
 void set_players() {
     player_init(&player, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 100);
     player_init(&opponent, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 150);
+    player_set_textures(renderer);
 }
 
 void update_opponent_state() {

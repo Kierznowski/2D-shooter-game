@@ -10,12 +10,31 @@
 
 bool host = false;
 
+static SDL_Texture *player_texture = NULL;
+static SDL_Texture *opponent_texture = NULL;
+
 void player_init(Player *player, int x, int y) {
     player->x = x;
     player->y = y;
     player->angle = 0.0f;
     player->ammo = 25;
     player->health = 100;
+}
+
+void player_set_textures(SDL_Renderer *renderer) {
+    SDL_Surface *surface = SDL_LoadBMP("assets/textures/wall.bmp");
+    if (!surface) {
+        SDL_Log("BMP loading failed: %s", SDL_GetError());
+        exit(1);
+    }
+
+    player_texture = SDL_CreateTextureFromSurface(renderer, surface);
+    SDL_FreeSurface(surface);
+
+    if (!player_texture) {
+        SDL_Log("Player texture creation failed: %s", SDL_GetError());
+        exit(1);
+    }
 }
 
 void player_update(Player *player, const Uint8 *key_state, float delta_time) {
@@ -67,45 +86,25 @@ void player_render(SDL_Renderer *renderer, Player *player, float camera_x, float
     float screen_x = player->x - camera_x;
     float screen_y = player->y - camera_y;
 
-    // player body
-    const int w = PLAYER_WIDTH;
-    const int h = PLAYER_HEIGHT;
-
-    // player center
-    float x_cen = w / 2.0f;
-    float y_cen = h / 2.0f;
-
-    // Player corners position before rotation
-    SDL_FPoint rect[4] = {
-        {-x_cen, -y_cen},   // upper-left
-        {x_cen, -y_cen},    // upper-right
-        {x_cen, y_cen},     // bottom-right
-        {-x_cen, y_cen},    // bottom-left
+    SDL_Rect dst = {
+        (int)(screen_x - PLAYER_WIDTH / 2),
+        (int)(screen_y - PLAYER_HEIGHT / 2),
+        PLAYER_WIDTH,
+        PLAYER_HEIGHT
     };
 
-    // Player corners after rotation
-    // Rotate player
-        SDL_FPoint points[4];
-    for (int i = 0; i < 4; i++) {
-        points[i].x = rect[i].x * cosf(player->angle) - rect[i].y * sinf(player->angle) + player->x;
-        points[i].y = rect[i].x * sinf(player->angle) + rect[i].y * cosf(player->angle) + player->y;
-    }
+    SDL_Point center = {PLAYER_WIDTH / 2, PLAYER_HEIGHT / 2};
 
-    SDL_Rect player_body = {
-        (int)(screen_x - x_cen),
-        (int)(screen_y - y_cen),
-        w, h
-    };
     if (opponent) {
-        SDL_SetRenderDrawColor(renderer, 0, 128, 128, 255);
+        SDL_SetTextureColorMod(player_texture, 0, 128, 128);
     } else {
-        SDL_SetRenderDrawColor(renderer, 128, 64, 0, 255);
+        SDL_SetTextureColorMod(player_texture, 128, 64, 0);
     }
-    SDL_RenderFillRect(renderer, &player_body);
 
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-    SDL_RenderDrawLine(renderer,
-        (int)screen_x, (int)screen_y,
-        (int)(screen_x + cosf(player->angle) * x_cen),
-        (int)(screen_y + sinf(player->angle) * x_cen));
+
+    SDL_RenderCopyEx(renderer, player_texture, NULL, &dst, player->angle*(180 / M_PI), &center, SDL_FLIP_NONE);
+}
+
+void player_destroy_texture() {
+    SDL_DestroyTexture(player_texture);
 }
