@@ -2,9 +2,10 @@
 #define PLAYER_H
 
 #include <SDL2/SDL.h>
+#include <stdbool.h>
 
 typedef struct {
-    float x, y; // position
+    int x, y; // position
     float angle; // facing direction in rads
     int health;
     int ammo;
@@ -12,6 +13,6 @@ typedef struct {
 
 void player_init(Player *player, int x, int y);
 void player_update(Player *player, const Uint8 *key_state, float deltaTime);
-void player_render(SDL_Renderer *renderer, Player *player, float camera_x, float camera_y);
+void player_render(SDL_Renderer *renderer, Player *player, float camera_x, float camera_y, bool opponent);
 
 #endif //PLAYER_H
