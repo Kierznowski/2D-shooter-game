@@ -16,7 +16,9 @@ add_executable(2D_shooter_game src/main.c
         src/tilemap.c
         src/tilemap.h
         src/hud.c
-        src/hud.h)
+        src/hud.h
+        src/network.c
+        src/network.h)
 
 # Link SDL2 + math libraries
 target_link_libraries(2D_shooter_game ${SDL2_LIBRARIES} m)
