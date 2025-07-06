@@ -1,5 +1,7 @@
+#include <SDL_image.h>
 #include <SDL2/SDL.h>
 #include <stdbool.h>
+
 #include "player.h"
 #include "bullet.h"
 #include "tilemap.h"
@@ -27,6 +29,7 @@ void set_players();
 void update_opponent_state();
 void prepare_player_state();
 void render();
+bool check_game_over(Player *player, Player *opponent);
 
 int main(int argc, char *argv[]) {
 
@@ -36,7 +39,7 @@ int main(int argc, char *argv[]) {
     }
 
     bool running = true;
-    const char *ip = NULL;
+    char *ip = NULL;
     int port = 0;
 
     set_connection(&is_host, &port, &ip, argv, argc);
@@ -66,7 +69,9 @@ int main(int argc, char *argv[]) {
         const Uint32 current_time = SDL_GetTicks();
         const float delta_time = (float)(current_time - last_time) / 1000.0f;
         last_time = current_time;
-        player_update(&player, key_state, delta_time);
+        player_update(&player, key_state, delta_time, remote_bullets);
+        player_check_collision_with_bullets(&player, remote_bullets);
+        player_check_collision_with_bullets(&opponent, bullets);
         bullet_update_all(bullets, key_state, delta_time, player.x, player.y, player.angle, &player.ammo);
         camera_x = player.x - SCREEN_WIDTH / 2.0;
         camera_y = player.y - SCREEN_HEIGHT / 2.0;
@@ -80,6 +85,10 @@ int main(int argc, char *argv[]) {
             update_opponent_state();
         }
 
+        if (check_game_over(&player, &opponent)) {
+            printf("Game Over\n");
+            exit(0);
+        }
         // Render
         render();
     }
@@ -90,6 +99,7 @@ int main(int argc, char *argv[]) {
     network_shutdown();
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
+    IMG_Quit();
     SDL_Quit();
 
     return 0;
@@ -98,6 +108,11 @@ int main(int argc, char *argv[]) {
 void set_SDL() {
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         SDL_Log("SDL_Init Error: %s", SDL_GetError());
+        exit(EXIT_FAILURE);
+    }
+
+    if (!(IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG)) {
+        SDL_Log("Failed to init SDL_image: %s", IMG_GetError());
         exit(EXIT_FAILURE);
     }
 
@@ -122,7 +137,9 @@ void set_SDL() {
 void set_players() {
     player_init(&player, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 100);
     player_init(&opponent, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 150);
-    player_set_textures(renderer);
+    player_set_textures(renderer, true);
+    player_set_textures(renderer, false);
+
 }
 
 void update_opponent_state() {
@@ -169,4 +186,16 @@ void render() {
     hud_render(renderer, &player);
 
     SDL_RenderPresent(renderer);
+}
+
+bool check_game_over(Player *player, Player *opponent) {
+    if (player->health <= 0 || opponent->health <= 0) {
+        if (player->health > 0) {
+            printf("You won!");
+        } else {
+            printf("You loose!");
+        }
+        return true;
+    }
+    return false;
 }

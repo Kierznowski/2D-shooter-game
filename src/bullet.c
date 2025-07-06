@@ -4,7 +4,6 @@
 #include "tilemap.h"
 
 #define BULLET_SPEED 400.f;
-#define BULLET_RADIUS 3.0f
 
 void bullet_fire(Bullet bullets[], float x, float y, float angle) {
     for (int i = 0; i < MAX_BULLETS; i++) {
