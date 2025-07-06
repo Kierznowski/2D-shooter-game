@@ -5,6 +5,7 @@
 #include <stdbool.h>
 
 #define MAX_BULLETS 20
+#define BULLET_RADIUS 3.0f
 
 typedef struct {
     float x, y;

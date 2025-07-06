@@ -19,6 +19,9 @@ typedef struct {
         float vx, vy;
         bool active;
     } bullets[MAX_BULLETS];
+    /*struct {
+        bool active;
+    } opponent_bullets_update[MAX_BULLETS];*/
 } PlayerPacket;
 
 bool network_send_player_packet(PlayerPacket *packet);
