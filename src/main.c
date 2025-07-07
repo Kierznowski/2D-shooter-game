@@ -8,6 +8,7 @@
 #include "hud.h"
 #include "network.h"
 #include "light_beam.h"
+#include "menu.h"
 
 #define SCREEN_WIDTH 800
 #define SCREEN_HEIGHT 640
@@ -33,21 +34,22 @@ bool check_game_over(Player *player, Player *opponent);
 
 int main(int argc, char *argv[]) {
 
-    if (argc < 3) {
-        printf("Usage: '%s host <port>' '%s client <ip> <port>'\n", argv[0], argv[0]);
-        return 1;
-    }
-
     bool running = true;
     char *ip = NULL;
     int port = 0;
 
-    set_connection(&is_host, &port, &ip, argv, argc);
     set_SDL();
     set_players();
     tilemap_load(renderer);
     light_beam_init(renderer, SCREEN_WIDTH, SCREEN_HEIGHT);
 
+    Menu_Config menu_config = {0};
+    if (!menu_run(renderer, &menu_config)) {
+        SDL_Log("Menu Error: %s", SDL_GetError());
+        return 1;
+    };
+
+    is_host = menu_config.is_host;
 
     Uint32 last_time = SDL_GetTicks();
     while (running) {

@@ -1,31 +1,21 @@
 #include "network.h"
 
 #include <stdio.h>
-#include <sys/socket.h> // socket() etc...
-#include <arpa/inet.h> // sockaddr_in struct
-#include <unistd.h> // close()
 
+#ifdef _WIN32
+static WSADATA wsa_data;
+#endif
 
 static int sock_fd = -1;
 
-void set_connection(bool *is_host, int *port, char **ip, char **argv, int argc) {
-    if (strcmp(argv[1], "host") == 0 && argc == 3) {
-        *is_host = true;
-        *port = atoi(argv[2]);
-    } else if (strcmp(argv[1], "client") == 0 && argc == 4) {
-        *ip = argv[2];
-        *port = atoi(argv[3]);
-    } else {
-        fprintf(stderr, "Usage: %s host <port> client <ip> <port>\n", argv[0]);
-        return;
+bool network_init(bool is_host, char *ip, int port) {
+#ifdef _WIN32
+    if (WSAStartup(MAKEWORD(2, 2), &wsa_data) != 0) {
+        fprintf(stderr, "WSAStartup failed\n");
+        return false;
     }
+#endif
 
-    if (!network_init(*is_host, *ip, *port)) {
-        fprintf(stderr, "network_init Error: %s", SDL_GetError());
-    }
-}
-
-bool network_init(bool is_host, const char *ip, int port) {
     sock_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (sock_fd < 0) {
         perror("socket failed");
@@ -62,6 +52,7 @@ bool network_init(bool is_host, const char *ip, int port) {
 
 
     } else {
+        // client code
         struct sockaddr_in serv_addr = {
             .sin_family = AF_INET,
             .sin_port = htons(port),
@@ -83,10 +74,15 @@ bool network_init(bool is_host, const char *ip, int port) {
 }
 
 void network_shutdown() {
+#ifdef _WIN32
+    WSACleanup();
+    closesocket(sock_fd);
+#else
     if (sock_fd >= 0) {
         close(sock_fd);
         sock_fd = -1;
     }
+#endif
 }
 
 bool network_send_all(int sock, const void *buffer, size_t length) {
