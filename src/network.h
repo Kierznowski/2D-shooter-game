@@ -1,12 +1,19 @@
 #ifndef NETWORK_H
 #define NETWORK_H
 
-#include "bullet.h"
+#ifdef _WIN32
+#include <winsock2.h>
+#pragma comment(lib, "ws2_32.lib")
+#else
+#include <sys/socket.h> // socket() etc...
+#include <arpa/inet.h> // sockaddr_in struct
+#include <unistd.h> // close()
+#endif
 
+#include "bullet.h"
 #include <stdbool.h>
 
-void set_connection(bool *is_host, int *port, char **ip, char **argv, int argc);
-bool network_init(bool is_host, const char *ip, int port);
+bool network_init(bool is_host, char *ip, int port);
 void network_shutdown();
 
 typedef struct {
@@ -19,9 +26,6 @@ typedef struct {
         float vx, vy;
         bool active;
     } bullets[MAX_BULLETS];
-    /*struct {
-        bool active;
-    } opponent_bullets_update[MAX_BULLETS];*/
 } PlayerPacket;
 
 bool network_send_player_packet(PlayerPacket *packet);
