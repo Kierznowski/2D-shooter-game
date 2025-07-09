@@ -3,12 +3,12 @@
 #include "bullet.h"
 
 #include <math.h>
-#include <SDL_image.h>
+#include <SDL2/SDL_image.h>
 
 #define PLAYER_ROTATION_SPEED 4.0f // rads per sec
 #define PLAYER_SPEED 300.0f // pixels per sec
-#define PLAYER_WIDTH 28
-#define PLAYER_HEIGHT 28
+#define PLAYER_WIDTH 30
+#define PLAYER_HEIGHT 30
 
 bool host = false;
 bool *collision_mask;
@@ -17,22 +17,21 @@ static SDL_Texture *player_texture = NULL;
 static SDL_Texture *opponent_texture = NULL;
 
 bool player_collision_with_tilemap(Player *player);
-void player_check_collision_with_bullets(Player *player, Bullet *bullets);
 
 void player_init(Player *player, int x, int y) {
     player->x = x;
     player->y = y;
     player->angle = 0.0f;
-    player->ammo = 25;
+    player->ammo = 100;
     player->health = 100;
 }
 
 void player_set_textures(SDL_Renderer *renderer, bool opponent) {
     SDL_Surface *surface;
     if (opponent) {
-        surface = IMG_Load("assets/sprites/manBrown_machine.png");
+        surface = IMG_Load("assets/sprites/ufoBlack.png");
     } else {
-        surface = IMG_Load("assets/sprites/womanGreen_machine.png");
+        surface = IMG_Load("assets/sprites/ufoBlue.png");
     }
     if (!surface) {
         SDL_Log("Player sprite loading failed: %s", SDL_GetError());
@@ -143,37 +142,6 @@ void player_render(SDL_Renderer *renderer, Player *player, float camera_x, float
         SDL_RenderCopyEx(renderer, player_texture, NULL, &dst, player->angle*(180 / M_PI), &center, SDL_FLIP_NONE);
     }
 }
-
-/*bool player_collision_with_tilemap(Player *player) {
-    int tex_w = PLAYER_WIDTH;
-    int tex_h = PLAYER_HEIGHT;
-
-    float cos_a = cosf(player->angle);
-    float sin_a = sinf(player->angle);
-
-    for (int y = 0; y < tex_h; y++) {
-        for (int x = 0; x < tex_w; x++) {
-            int index = y * tex_w + x;
-            if (collision_mask[index] == 0) {
-                continue;
-            }
-
-            float local_x = x - tex_w / 2.0;
-            float local_y = y - tex_h / 2.0;
-
-            float world_dx = local_x * cos_a - local_y * sin_a;
-            float world_dy = local_x * sin_a + local_y * cos_a;
-
-            int world_x = (int)(player->x + world_dx);
-            int world_y = (int)(player->y + world_dy);
-
-            if (tilemap_is_colliding(world_x, world_y)) {
-                return true;
-            }
-        }
-    }
-    return false;
-}*/
 
 void player_check_collision_with_bullets(Player *player, Bullet *bullets) {
     SDL_Rect player_rect = {player->x - PLAYER_WIDTH / 2, player->y - PLAYER_HEIGHT / 2, PLAYER_WIDTH, PLAYER_HEIGHT};

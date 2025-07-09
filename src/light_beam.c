@@ -39,7 +39,7 @@ void light_beam_init(SDL_Renderer *renderer, int width, int height) {
     // Set of triangles build cone
     SDL_Vertex vertices[segments + 2];
     // Center vertice of the cone
-    vertices[0].position.x = cx - 15;
+    vertices[0].position.x = cx;
     vertices[0].position.y = cy;
     vertices[0].color = (SDL_Color){0, 0, 0, 0};
 

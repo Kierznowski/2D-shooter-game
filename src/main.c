@@ -1,4 +1,5 @@
-#include <SDL_image.h>
+#define SDL_MAIN_HANDLED
+#include <SDL2/SDL_image.h>
 #include <SDL2/SDL.h>
 #include <stdbool.h>
 
@@ -42,6 +43,7 @@ int main(int argc, char *argv[]) {
     set_players();
     tilemap_load(renderer);
     light_beam_init(renderer, SCREEN_WIDTH, SCREEN_HEIGHT);
+    hud_init(renderer);
 
     Menu_Config menu_config = {0};
     if (!menu_run(renderer, &menu_config)) {
@@ -98,6 +100,7 @@ int main(int argc, char *argv[]) {
     tilemap_unload();
     light_beam_destroy();
     player_destroy_texture();
+    hud_destroy();
     network_shutdown();
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
