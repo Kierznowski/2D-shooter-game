@@ -3,6 +3,7 @@
 #include <SDL2/SDL.h>
 #include <stdbool.h>
 
+#include "utils.h"
 #include "player.h"
 #include "bullet.h"
 #include "tilemap.h"
@@ -10,9 +11,6 @@
 #include "network.h"
 #include "light_beam.h"
 #include "menu.h"
-
-#define SCREEN_WIDTH 800
-#define SCREEN_HEIGHT 640
 
 SDL_Window *window = NULL;
 SDL_Renderer *renderer = NULL;
@@ -74,7 +72,7 @@ int main(int argc, char *argv[]) {
         const float delta_time = (float)(current_time - last_time) / 1000.0f;
         last_time = current_time;
         player_update(&player, key_state, delta_time, remote_bullets);
-        player_check_collision_with_bullets(&player, remote_bullets);
+        hud_set_blood_screen(player_check_collision_with_bullets(&player, remote_bullets));
         player_check_collision_with_bullets(&opponent, bullets);
         bullet_update_all(bullets, key_state, delta_time, player.x, player.y, player.angle, &player.ammo);
         camera_x = player.x - SCREEN_WIDTH / 2.0;
