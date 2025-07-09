@@ -1,7 +1,7 @@
 #ifndef MENU_H
 #define MENU_H
 
-#include <SDL_render.h>
+#include <SDL2/SDL.h>
 #include <stdbool.h>
 
 typedef struct {
