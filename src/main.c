@@ -3,6 +3,7 @@
 #include <SDL2/SDL.h>
 #include <stdbool.h>
 
+#include "utils.h"
 #include "player.h"
 #include "bullet.h"
 #include "tilemap.h"
@@ -10,9 +11,6 @@
 #include "network.h"
 #include "light_beam.h"
 #include "menu.h"
-
-#define SCREEN_WIDTH 800
-#define SCREEN_HEIGHT 640
 
 SDL_Window *window = NULL;
 SDL_Renderer *renderer = NULL;
@@ -22,42 +20,49 @@ Bullet bullets[MAX_BULLETS] = {0};
 Bullet remote_bullets[MAX_BULLETS] = {0};
 PlayerPacket local_packet = {0};
 PlayerPacket remote_packet = {0};
-bool is_host = false;
+bool running = true;
 float camera_x = 0;
 float camera_y = 0;
+Uint32 last_time = 0;
+char *ip = NULL;
+int port = 0;
+Menu_Config menu_config = {0};
 
+void init();
+void loop();
+void clean();
 void set_SDL();
 void set_players();
-void update_opponent_state();
-void prepare_player_state();
-void render();
 bool check_game_over(Player *player, Player *opponent);
+void render();
+void reset_state();
+void update_state(const Uint8 *key_state);
 
-int main(int argc, char *argv[]) {
+int main() {
+    init();
+    if (!menu_run(renderer, &menu_config)) {
+        SDL_Log("Menu Error: %s", SDL_GetError());
+        return 1;
+    };
+    last_time = SDL_GetTicks();
+    loop();
+    clean();
+    return 0;
+}
 
-    bool running = true;
-    char *ip = NULL;
-    int port = 0;
-
+void init() {
     set_SDL();
     set_players();
     tilemap_load(renderer);
     light_beam_init(renderer, SCREEN_WIDTH, SCREEN_HEIGHT);
     hud_init(renderer);
+}
 
-    Menu_Config menu_config = {0};
-    if (!menu_run(renderer, &menu_config)) {
-        SDL_Log("Menu Error: %s", SDL_GetError());
-        return 1;
-    };
-
-    is_host = menu_config.is_host;
-
-    Uint32 last_time = SDL_GetTicks();
+void loop() {
     while (running) {
-        // If you are client receive host state first
-        if (!is_host && network_recv_player_packet(&remote_packet)) {
-            update_opponent_state();
+        // If you are client, receive host state
+        if (!menu_config.is_host && network_recv_player_packet(&remote_packet)) {
+            player_update_state(&opponent, remote_bullets, &remote_packet);
         }
 
         // Input
@@ -69,45 +74,30 @@ int main(int argc, char *argv[]) {
         }
         const Uint8 *key_state = SDL_GetKeyboardState(NULL);
 
-        // Update
-        const Uint32 current_time = SDL_GetTicks();
-        const float delta_time = (float)(current_time - last_time) / 1000.0f;
-        last_time = current_time;
-        player_update(&player, key_state, delta_time, remote_bullets);
-        player_check_collision_with_bullets(&player, remote_bullets);
-        player_check_collision_with_bullets(&opponent, bullets);
-        bullet_update_all(bullets, key_state, delta_time, player.x, player.y, player.angle, &player.ammo);
-        camera_x = player.x - SCREEN_WIDTH / 2.0;
-        camera_y = player.y - SCREEN_HEIGHT / 2.0;
+        //update
+        update_state(key_state);
 
         // Send state
-        prepare_player_state();
+        player_prepare_state(&player, bullets, &local_packet);
         network_send_player_packet(&local_packet);
 
-        // If you are host receive opponent state later
-        if (is_host && network_recv_player_packet(&remote_packet)) {
-            update_opponent_state();
+        // If you are host, receive opponent state
+        if (menu_config.is_host && network_recv_player_packet(&remote_packet)) {
+            player_update_state(&opponent, remote_bullets, &remote_packet);
         }
 
         if (check_game_over(&player, &opponent)) {
-            printf("Game Over\n");
-            exit(0);
+            menu_display_game_over_menu(renderer, player.health);
+            if (menu_display_game_over_menu(renderer, player.health)) {
+                reset_state();
+                printf("health: %d %d, ammo: %d %d", player.health, opponent.health, player.ammo, opponent.ammo);
+            } else {
+                return;
+            }
         }
         // Render
         render();
     }
-
-    tilemap_unload();
-    light_beam_destroy();
-    player_destroy_texture();
-    hud_destroy();
-    network_shutdown();
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
-    IMG_Quit();
-    SDL_Quit();
-
-    return 0;
 }
 
 void set_SDL() {
@@ -139,42 +129,47 @@ void set_SDL() {
     }
 }
 
+void clean() {
+    tilemap_unload();
+    light_beam_destroy();
+    player_destroy_texture();
+    hud_destroy();
+    network_shutdown();
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
+    IMG_Quit();
+    SDL_Quit();
+}
+
 void set_players() {
     player_init(&player, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 100);
     player_init(&opponent, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 150);
     player_set_textures(renderer, true);
     player_set_textures(renderer, false);
-
 }
 
-void update_opponent_state() {
-    opponent.x = remote_packet.x;
-    opponent.y = remote_packet.y;
-    opponent.angle = remote_packet.angle;
-    opponent.health = remote_packet.health;
-    opponent.ammo = remote_packet.ammo;
-    for (int i = 0; i < MAX_BULLETS; i++) {
-        remote_bullets[i].x = remote_packet.bullets[i].x;
-        remote_bullets[i].y = remote_packet.bullets[i].y;
-        remote_bullets[i].vx = remote_packet.bullets[i].vx;
-        remote_bullets[i].vy = remote_packet.bullets[i].vy;
-        remote_bullets[i].active = remote_packet.bullets[i].active;
-    }
+void update_state(const Uint8 *key_state) {
+    const Uint32 current_time = SDL_GetTicks();
+    const float delta_time = (float)(current_time - last_time) / 1000.0f;
+    last_time = current_time;
+    player_update(&player, key_state, delta_time, remote_bullets);
+    player_check_collision_with_bullets(&opponent, bullets);
+    hud_set_blood_screen(player_check_collision_with_bullets(&player, remote_bullets));
+    bullet_update_all(bullets, key_state, delta_time, player.x, player.y, player.angle, &player.ammo);
+    camera_x = player.x - SCREEN_WIDTH / 2.0;
+    camera_y = player.y - SCREEN_HEIGHT / 2.0;
 }
 
-void prepare_player_state() {
-    local_packet.x = player.x;
-    local_packet.y = player.y;
-    local_packet.angle = player.angle;
-    local_packet.health = player.health;
-    local_packet.ammo = player.ammo;
-    for (int i = 0; i < MAX_BULLETS; i++) {
-        local_packet.bullets[i].x = bullets[i].x;
-        local_packet.bullets[i].y = bullets[i].y;
-        local_packet.bullets[i].vx = bullets[i].vx;
-        local_packet.bullets[i].vy = bullets[i].vy;
-        local_packet.bullets[i].active = bullets[i].active;
+bool check_game_over(Player *player, Player *opponent) {
+    if (player->health == 0 || opponent->health == 0) {
+        if (player->health > 0) {
+            printf("You won!");
+        } else {
+            printf("You loose!");
+        }
+        return true;
     }
+    return false;
 }
 
 void render() {
@@ -193,14 +188,9 @@ void render() {
     SDL_RenderPresent(renderer);
 }
 
-bool check_game_over(Player *player, Player *opponent) {
-    if (player->health <= 0 || opponent->health <= 0) {
-        if (player->health > 0) {
-            printf("You won!");
-        } else {
-            printf("You loose!");
-        }
-        return true;
-    }
-    return false;
+void reset_state() {
+    player.health = 100;
+    player.ammo = 100;
+    player.x = SCREEN_WIDTH / 2;
+    player.y = SCREEN_HEIGHT / 2 + 150;
 }

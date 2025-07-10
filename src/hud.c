@@ -1,4 +1,5 @@
 #include "hud.h"
+#include "utils.h"
 
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
@@ -6,6 +7,11 @@
 static SDL_Texture *bullet_tex = NULL;
 static SDL_Texture *health_tex = NULL;
 static TTF_Font *font = NULL;
+
+static bool blood_screen = false;
+static float blood_start = 0.0f;
+const float BLOOD_DURATION = 300.0f;
+float blood_time = 0.0f;
 
 void hud_init(SDL_Renderer *renderer) {
     if (TTF_Init() != 0) {
@@ -56,4 +62,25 @@ void hud_render(SDL_Renderer *renderer, Player *player) {
     SDL_RenderCopy(renderer, health_texture, NULL, &hp_rect);
     SDL_FreeSurface(health_surface);
     SDL_DestroyTexture(health_texture);
+
+    if (blood_screen) {
+        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+        float alpha = 100 - 100 * blood_time / BLOOD_DURATION;
+        SDL_SetRenderDrawColor(renderer, 255, 0, 0, alpha);
+        SDL_Rect blood_rect = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
+        SDL_RenderFillRect(renderer, &blood_rect);
+        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+    }
+}
+
+void hud_set_blood_screen(bool blood) {
+    if (blood) {
+        blood_screen = true;
+        blood_start = SDL_GetTicks();
+    } else {
+        blood_time = SDL_GetTicks() - blood_start;
+        if (blood_time >= BLOOD_DURATION) {
+            blood_screen = false;
+        }
+    }
 }

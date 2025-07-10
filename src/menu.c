@@ -176,3 +176,63 @@ void menu_waiting_for_connection(SDL_Renderer *renderer) {
     SDL_DestroyTexture(texture);
     SDL_RenderPresent(renderer);
 }
+
+bool menu_display_game_over_menu(SDL_Renderer *renderer, int player_health) {
+    if (TTF_Init() != 0) {
+        SDL_Log("TTF_Init error: %s", TTF_GetError());
+        return false;
+    }
+    font = TTF_OpenFont("assets/fonts/VT323/VT323-Regular.ttf", 24);
+    if (!font) {
+        SDL_Log("TTF_OpenFont error: %s", TTF_GetError());
+        return false;
+    }
+    text_color = (SDL_Color){255, 255, 255, 255};
+
+    const char *options[] = {"Continue", "Exit"};
+    int selected = 0;
+
+    bool running = true;
+    while (running) {
+        SDL_Event event;
+        while (SDL_PollEvent(&event)) {
+            if (event.type == SDL_QUIT) running = false;
+            if (event.type == SDL_KEYDOWN) {
+                switch (event.key.keysym.sym) {
+                    case (SDLK_DOWN):
+                        selected = (selected + 1) % 2;
+                        break;
+                    case SDLK_UP:
+                        selected = (selected + 1) % 2;
+                        break;
+                    case SDLK_RETURN:
+                    case SDLK_KP_ENTER:
+                        running = false;
+                        break;
+                }
+            }
+        }
+
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+        SDL_RenderClear(renderer);
+
+        for (int i = 0; i < 2; i++) {
+            char buffer[MAX_INPUT];
+            snprintf(buffer, sizeof(buffer), "%s %s", (i == selected ? ">": " "), options[i]);
+
+            SDL_Texture *texture = render_text(renderer, font, buffer, text_color);
+            if (texture) {
+                int texWidth = 0, texHeight = 0;
+                SDL_QueryTexture(texture, NULL, NULL, &texWidth, &texHeight);
+                SDL_Rect dst_rect = {100, 100 + i * 40, texWidth, texHeight};
+                SDL_RenderCopy(renderer, texture, NULL, &dst_rect);
+                SDL_DestroyTexture(texture);
+            }
+        }
+        SDL_RenderPresent(renderer);
+        SDL_Delay(16);
+    }
+    TTF_CloseFont(font);
+    TTF_Quit();
+    return selected == 0;
+}

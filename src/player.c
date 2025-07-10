@@ -1,6 +1,5 @@
 #include "player.h"
 #include "tilemap.h"
-#include "bullet.h"
 
 #include <math.h>
 #include <SDL2/SDL_image.h>
@@ -143,7 +142,7 @@ void player_render(SDL_Renderer *renderer, Player *player, float camera_x, float
     }
 }
 
-void player_check_collision_with_bullets(Player *player, Bullet *bullets) {
+bool player_check_collision_with_bullets(Player *player, Bullet *bullets) {
     SDL_Rect player_rect = {player->x - PLAYER_WIDTH / 2, player->y - PLAYER_HEIGHT / 2, PLAYER_WIDTH, PLAYER_HEIGHT};
     for (int i = 0; i < MAX_BULLETS; i++) {
         if (!bullets[i].active) continue;
@@ -151,8 +150,10 @@ void player_check_collision_with_bullets(Player *player, Bullet *bullets) {
         if (SDL_HasIntersection(&bullet_rect, &player_rect)) {
             bullets[i].active = false;
             player->health -= 5;
+            return true;
         }
     }
+    return false;
 }
 
 void player_destroy_texture() {
@@ -161,3 +162,32 @@ void player_destroy_texture() {
 }
 
 
+void player_update_state(Player *player, Bullet *bullets, PlayerPacket *packet) {
+    player->x = packet->x;
+    player->y = packet->y;
+    player->angle = packet->angle;
+    player->health = packet->health;
+    player->ammo = packet->ammo;
+    for (int i = 0; i < MAX_BULLETS; i++) {
+        bullets[i].x = packet->bullets[i].x;
+        bullets[i].y = packet->bullets[i].y;
+        bullets[i].vx = packet->bullets[i].vx;
+        bullets[i].vy = packet->bullets[i].vy;
+        bullets[i].active = packet->bullets[i].active;
+    }
+}
+
+void player_prepare_state(Player *player, Bullet *bullets, PlayerPacket *packet) {
+    packet->x = player->x;
+    packet->y = player->y;
+    packet->angle = player->angle;
+    packet->health = player->ammo;
+    packet->ammo = player->ammo;
+    for (int i = 0; i < MAX_BULLETS; i++) {
+        packet->bullets[i].x = bullets[i].x;
+        packet->bullets[i].y = bullets[i].y;
+        packet->bullets[i].vx = bullets[i].vx;
+        packet->bullets[i].vy = bullets[i].vy;
+        packet->bullets[i].active = bullets[i].active;
+    }
+}

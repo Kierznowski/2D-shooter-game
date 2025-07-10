@@ -25,7 +25,8 @@ add_executable(2D_shooter_game src/main.c
         src/light_beam.c
         src/light_beam.h
         src/menu.c
-        src/menu.h)
+        src/menu.h
+        src/utils.h)
 
 # Link SDL2 + SDL2_Image + math libraries
 target_link_libraries(2D_shooter_game ${SDL2_LIBRARIES} SDL2_image SDL2_ttf::SDL2_ttf m)
