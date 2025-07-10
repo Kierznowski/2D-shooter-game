@@ -1,7 +1,5 @@
 #include "player.h"
 #include "tilemap.h"
-#include "bullet.h"
-#include "hud.h"
 
 #include <math.h>
 #include <SDL2/SDL_image.h>
@@ -163,3 +161,33 @@ void player_destroy_texture() {
     SDL_DestroyTexture(player_texture);
 }
 
+
+void player_update_state(Player *player, Bullet *bullets, PlayerPacket *packet) {
+    player->x = packet->x;
+    player->y = packet->y;
+    player->angle = packet->angle;
+    player->health = packet->health;
+    player->ammo = packet->ammo;
+    for (int i = 0; i < MAX_BULLETS; i++) {
+        bullets[i].x = packet->bullets[i].x;
+        bullets[i].y = packet->bullets[i].y;
+        bullets[i].vx = packet->bullets[i].vx;
+        bullets[i].vy = packet->bullets[i].vy;
+        bullets[i].active = packet->bullets[i].active;
+    }
+}
+
+void player_prepare_state(Player *player, Bullet *bullets, PlayerPacket *packet) {
+    packet->x = player->x;
+    packet->y = player->y;
+    packet->angle = player->angle;
+    packet->health = player->ammo;
+    packet->ammo = player->ammo;
+    for (int i = 0; i < MAX_BULLETS; i++) {
+        packet->bullets[i].x = bullets[i].x;
+        packet->bullets[i].y = bullets[i].y;
+        packet->bullets[i].vx = bullets[i].vx;
+        packet->bullets[i].vy = bullets[i].vy;
+        packet->bullets[i].active = bullets[i].active;
+    }
+}
